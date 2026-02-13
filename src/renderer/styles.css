@@ -5217,6 +5217,16 @@ html, body, #root {
   color: #fff;
 }
 
+.liq-filter-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  align-self: center;
+}
+
+.liq-leverage-filters {
+  padding-top: 0;
+}
+
 .liq-settings-row {
   display: flex;
   gap: 4px;

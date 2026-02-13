@@ -16,6 +16,7 @@ interface Position {
 const DEFAULT_REFRESH = 30
 const DEFAULT_MAX_DIST = 100
 const QUICK_FILTERS = ['ALL', 'BTC', 'ETH', 'SOL', 'DOGE', 'HYPE']
+const LEVERAGE_OPTIONS = [1, 5, 10, 20, 40, 50]
 
 function formatUsd(v: number): string {
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
@@ -88,9 +89,13 @@ export function LiquidationPanel(): React.ReactElement {
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
   const [showSettings, setShowSettings] = useState(false)
 
-  // Client-side ticker filter (instant, no re-fetch)
+  // Client-side filters (instant, no re-fetch)
   const [activeFilter, setActiveFilter] = useState<string>(() => {
     return localStorage.getItem('liq-active-filter') || 'ALL'
+  })
+  const [minLeverage, setMinLeverage] = useState<number>(() => {
+    const stored = localStorage.getItem('liq-min-leverage')
+    return stored ? parseInt(stored) : 1
   })
 
   const [isExpanded, setIsExpanded] = useState(() => {
@@ -116,6 +121,10 @@ export function LiquidationPanel(): React.ReactElement {
   useEffect(() => {
     localStorage.setItem('liq-active-filter', activeFilter)
   }, [activeFilter])
+
+  useEffect(() => {
+    localStorage.setItem('liq-min-leverage', String(minLeverage))
+  }, [minLeverage])
 
   const fetchData = useCallback(
     async (showLoading = true) => {
@@ -160,11 +169,14 @@ export function LiquidationPanel(): React.ReactElement {
     return Array.from(tickers).sort()
   }, [positions])
 
-  // Filter positions client-side
+  // Filter positions client-side (ticker + leverage)
   const filtered = useMemo(() => {
-    if (activeFilter === 'ALL') return positions
-    return positions.filter((p) => p.coin === activeFilter)
-  }, [positions, activeFilter])
+    return positions.filter((p) => {
+      if (activeFilter !== 'ALL' && p.coin !== activeFilter) return false
+      if (p.leverage < minLeverage) return false
+      return true
+    })
+  }, [positions, activeFilter, minLeverage])
 
   const longs = sortPositions(filtered.filter((p) => p.side === 'long'))
   const shorts = sortPositions(filtered.filter((p) => p.side === 'short'))
@@ -238,6 +250,22 @@ export function LiquidationPanel(): React.ReactElement {
                   {activeFilter} &times;
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Leverage filter */}
+          {positions.length > 0 && (
+            <div className="liq-filters liq-leverage-filters">
+              <span className="liq-filter-label">Lev:</span>
+              {LEVERAGE_OPTIONS.map((lev) => (
+                <button
+                  key={lev}
+                  className={`liq-filter-chip ${minLeverage === lev ? 'active' : ''}`}
+                  onClick={() => setMinLeverage(lev)}
+                >
+                  {lev}x+
+                </button>
+              ))}
             </div>
           )}
 
