@@ -122,11 +122,16 @@ export async function computeNearLiquidations(
 
   for (let i = 0; i < results.length; i++) {
     const result = results[i]
-    if (result.status !== 'fulfilled') continue
+    if (result.status !== 'fulfilled') {
+      console.log(`[LiqFetcher] Wallet ${walletsToCheck[i].slice(0, 10)} FAILED:`, (result as PromiseRejectedResult).reason)
+      continue
+    }
 
     const state = result.value
     const wallet = walletsToCheck[i]
     const shortAddr = wallet.slice(0, 6)
+    const openPositions = (state.assetPositions || []).filter((ap: { position: RawPosition }) => parseFloat(ap.position.szi) !== 0)
+    console.log(`[LiqFetcher] Wallet ${shortAddr}: ${openPositions.length} open positions`, openPositions.map((ap: { position: RawPosition }) => `${ap.position.coin} ${ap.position.szi}`))
 
     for (const ap of state.assetPositions || []) {
       const pos = ap.position
