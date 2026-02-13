@@ -8,15 +8,16 @@ interface Position {
   markPrice: number
   entryPrice: number
   side: 'long' | 'short'
-  pctToLiquidation: number  // -1 means no liq price (cross margin, safe)
+  pctToLiquidation: number  // -1 means no liq price
   wallet: string
+  walletFull: string
   unrealizedPnl: number
 }
 
 const DEFAULT_REFRESH = 30
 const DEFAULT_MAX_DIST = 100
-const QUICK_FILTERS = ['ALL', 'BTC', 'ETH', 'SOL', 'DOGE', 'HYPE']
 const LEVERAGE_OPTIONS = [1, 5, 10, 20, 40, 50]
+const HL_EXPLORER = 'https://app.hyperliquid.xyz/explorer/address/'
 
 function formatUsd(v: number): string {
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
@@ -50,6 +51,13 @@ function sortPositions(positions: Position[]): Position[] {
 }
 
 function PositionCard({ pos }: { pos: Position }): React.ReactElement {
+  const handleWalletClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (pos.walletFull) {
+      window.electronAPI?.openExternal(`${HL_EXPLORER}${pos.walletFull}`)
+    }
+  }
+
   return (
     <div className={`liq-position ${pos.side}`}>
       <div className="liq-pos-top">
@@ -67,7 +75,13 @@ function PositionCard({ pos }: { pos: Position }): React.ReactElement {
         )}
       </div>
       <div className="liq-pos-bottom">
-        <span className="liq-pos-wallet">{pos.wallet}</span>
+        <span
+          className={`liq-pos-wallet ${pos.walletFull ? 'clickable' : ''}`}
+          onClick={pos.walletFull ? handleWalletClick : undefined}
+          title={pos.walletFull ? `Open ${pos.walletFull} on Hyperliquid` : pos.wallet}
+        >
+          {pos.wallet}
+        </span>
         <span className={`liq-pos-pnl ${pos.unrealizedPnl >= 0 ? 'profit' : 'loss'}`}>
           {formatPnl(pos.unrealizedPnl)}
         </span>
@@ -87,9 +101,16 @@ export function LiquidationPanel(): React.ReactElement {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
 
-  // Client-side filters (instant, no re-fetch)
+  // Ticker watchlist (dynamic, like TradingView)
+  const [watchlist, setWatchlist] = useState<string[]>(() => {
+    const stored = localStorage.getItem('liq-watchlist')
+    try {
+      return stored ? JSON.parse(stored) : ['BTC', 'ETH', 'SOL']
+    } catch {
+      return ['BTC', 'ETH', 'SOL']
+    }
+  })
   const [activeFilter, setActiveFilter] = useState<string>(() => {
     return localStorage.getItem('liq-active-filter') || 'ALL'
   })
@@ -97,6 +118,9 @@ export function LiquidationPanel(): React.ReactElement {
     const stored = localStorage.getItem('liq-min-leverage')
     return stored ? parseInt(stored) : 1
   })
+  const [showAddTicker, setShowAddTicker] = useState(false)
+  const [tickerSearch, setTickerSearch] = useState('')
+  const tickerInputRef = useRef<HTMLInputElement>(null)
 
   const [isExpanded, setIsExpanded] = useState(() => {
     const stored = localStorage.getItem('liq-panel-expanded')
@@ -110,29 +134,24 @@ export function LiquidationPanel(): React.ReactElement {
     const stored = localStorage.getItem('liq-max-distance')
     return stored ? parseFloat(stored) : DEFAULT_MAX_DIST
   })
-  const [customFilter, setCustomFilter] = useState('')
 
   const mountedRef = useRef(true)
 
-  useEffect(() => {
-    localStorage.setItem('liq-panel-expanded', String(isExpanded))
-  }, [isExpanded])
+  useEffect(() => { localStorage.setItem('liq-panel-expanded', String(isExpanded)) }, [isExpanded])
+  useEffect(() => { localStorage.setItem('liq-active-filter', activeFilter) }, [activeFilter])
+  useEffect(() => { localStorage.setItem('liq-min-leverage', String(minLeverage)) }, [minLeverage])
+  useEffect(() => { localStorage.setItem('liq-watchlist', JSON.stringify(watchlist)) }, [watchlist])
 
+  // Focus ticker input when add popup opens
   useEffect(() => {
-    localStorage.setItem('liq-active-filter', activeFilter)
-  }, [activeFilter])
-
-  useEffect(() => {
-    localStorage.setItem('liq-min-leverage', String(minLeverage))
-  }, [minLeverage])
+    if (showAddTicker) setTimeout(() => tickerInputRef.current?.focus(), 50)
+  }, [showAddTicker])
 
   const fetchData = useCallback(
     async (showLoading = true) => {
       if (showLoading) setLoading(true)
       try {
-        const result = await window.electronAPI?.liquidationFetch({
-          maxDistancePct,
-        })
+        const result = await window.electronAPI?.liquidationFetch({ maxDistancePct })
         if (!mountedRef.current) return
         if (result?.success && result.positions) {
           setPositions(result.positions)
@@ -163,13 +182,21 @@ export function LiquidationPanel(): React.ReactElement {
     }
   }, [fetchData, refreshInterval, isExpanded])
 
-  // Get unique tickers from data for the "more" dropdown
+  // All unique tickers from data
   const availableTickers = useMemo(() => {
     const tickers = new Set(positions.map((p) => p.coin))
     return Array.from(tickers).sort()
   }, [positions])
 
-  // Filter positions client-side (ticker + leverage)
+  // Filtered ticker suggestions (for add popup)
+  const tickerSuggestions = useMemo(() => {
+    const search = tickerSearch.toUpperCase()
+    return availableTickers
+      .filter((t) => !watchlist.includes(t) && (search === '' || t.includes(search)))
+      .slice(0, 20)
+  }, [availableTickers, watchlist, tickerSearch])
+
+  // Filter positions client-side
   const filtered = useMemo(() => {
     return positions.filter((p) => {
       if (activeFilter !== 'ALL' && p.coin !== activeFilter) return false
@@ -183,14 +210,21 @@ export function LiquidationPanel(): React.ReactElement {
   const totalLongValue = longs.reduce((s, p) => s + p.positionSize, 0)
   const totalShortValue = shorts.reduce((s, p) => s + p.positionSize, 0)
 
-  const handleCustomFilter = useCallback(() => {
-    const coin = customFilter.trim().toUpperCase()
-    if (coin) {
-      setActiveFilter(coin)
-      setCustomFilter('')
-      setShowSettings(false)
+  const addTicker = useCallback((ticker: string) => {
+    const t = ticker.toUpperCase()
+    if (t && !watchlist.includes(t)) {
+      setWatchlist((prev) => [...prev, t])
     }
-  }, [customFilter])
+    setActiveFilter(t)
+    setShowAddTicker(false)
+    setTickerSearch('')
+  }, [watchlist])
+
+  const removeTicker = useCallback((ticker: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setWatchlist((prev) => prev.filter((t) => t !== ticker))
+    if (activeFilter === ticker) setActiveFilter('ALL')
+  }, [activeFilter])
 
   return (
     <div className="liq-panel">
@@ -213,43 +247,81 @@ export function LiquidationPanel(): React.ReactElement {
         </span>
         <span className="liq-title">Whale Positions</span>
         {positions.length > 0 && <span className="liq-count">{filtered.length}</span>}
-        <button
-          className="liq-settings-btn"
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowSettings(!showSettings)
-          }}
-          title="Settings"
-          aria-label="Position settings"
-        >
-          &#x2699;
-        </button>
       </div>
 
       {isExpanded && (
         <div className="liq-panel-content">
-          {/* Quick filter chips */}
+          {/* Ticker watchlist bar */}
           {positions.length > 0 && (
             <div className="liq-filters">
-              {QUICK_FILTERS.map((f) => (
+              <button
+                className={`liq-filter-chip ${activeFilter === 'ALL' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('ALL')}
+              >
+                ALL
+              </button>
+              {watchlist.map((ticker) => (
                 <button
-                  key={f}
-                  className={`liq-filter-chip ${activeFilter === f ? 'active' : ''}`}
-                  onClick={() => setActiveFilter(f)}
+                  key={ticker}
+                  className={`liq-filter-chip ${activeFilter === ticker ? 'active' : ''}`}
+                  onClick={() => setActiveFilter(ticker)}
                 >
-                  {f}
+                  {ticker}
+                  <span
+                    className="liq-chip-remove"
+                    onClick={(e) => removeTicker(ticker, e)}
+                    title="Remove"
+                  >
+                    &times;
+                  </span>
                 </button>
               ))}
-              {/* Show active custom filter as a chip if not in quick filters */}
-              {activeFilter !== 'ALL' && !QUICK_FILTERS.includes(activeFilter) && (
-                <button
-                  className="liq-filter-chip active"
-                  onClick={() => setActiveFilter('ALL')}
-                  title="Click to clear"
-                >
-                  {activeFilter} &times;
-                </button>
-              )}
+              <button
+                className="liq-filter-chip liq-add-chip"
+                onClick={() => setShowAddTicker(!showAddTicker)}
+                title="Add ticker"
+              >
+                +
+              </button>
+            </div>
+          )}
+
+          {/* Add ticker popup */}
+          {showAddTicker && (
+            <div className="liq-add-ticker-popup">
+              <input
+                ref={tickerInputRef}
+                type="text"
+                value={tickerSearch}
+                onChange={(e) => setTickerSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && tickerSearch.trim()) {
+                    addTicker(tickerSearch.trim())
+                  }
+                  if (e.key === 'Escape') setShowAddTicker(false)
+                }}
+                placeholder="Search ticker..."
+                className="liq-ticker-search"
+              />
+              <div className="liq-ticker-grid">
+                {tickerSuggestions.map((t) => (
+                  <button
+                    key={t}
+                    className="liq-ticker-btn"
+                    onClick={() => addTicker(t)}
+                  >
+                    {t}
+                  </button>
+                ))}
+                {tickerSuggestions.length === 0 && tickerSearch && (
+                  <button
+                    className="liq-ticker-btn"
+                    onClick={() => addTicker(tickerSearch.trim())}
+                  >
+                    Add &quot;{tickerSearch.toUpperCase()}&quot;
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -266,42 +338,6 @@ export function LiquidationPanel(): React.ReactElement {
                   {lev}x+
                 </button>
               ))}
-            </div>
-          )}
-
-          {showSettings && (
-            <div className="liq-settings">
-              <label>Filter by ticker</label>
-              <div className="liq-settings-row">
-                <input
-                  type="text"
-                  value={customFilter}
-                  onChange={(e) => setCustomFilter(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCustomFilter()
-                  }}
-                  placeholder="e.g. LINK, AVAX"
-                />
-                <button className="liq-settings-save" onClick={handleCustomFilter}>
-                  Go
-                </button>
-              </div>
-              {availableTickers.length > 0 && (
-                <div className="liq-settings-tickers">
-                  {availableTickers.map((t) => (
-                    <button
-                      key={t}
-                      className={`liq-ticker-btn ${activeFilter === t ? 'active' : ''}`}
-                      onClick={() => {
-                        setActiveFilter(t)
-                        setShowSettings(false)
-                      }}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           )}
 

@@ -8,6 +8,7 @@ export interface LiquidationPosition {
   side: 'long' | 'short'
   pctToLiquidation: number
   wallet: string
+  walletFull: string
   unrealizedPnl: number
 }
 

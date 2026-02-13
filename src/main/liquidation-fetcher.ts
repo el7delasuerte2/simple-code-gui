@@ -128,7 +128,8 @@ export interface NearLiqPosition {
   entryPrice: number
   side: 'long' | 'short'
   pctToLiquidation: number
-  wallet: string
+  wallet: string       // short address (6 chars)
+  walletFull: string   // full address for explorer link
   unrealizedPnl: number
 }
 
@@ -207,6 +208,7 @@ export async function computeNearLiquidations(
           side: size > 0 ? 'long' : 'short',
           pctToLiquidation: pctToLiq,
           wallet: shortAddr,
+          walletFull: wallet,
           unrealizedPnl: parseFloat(pos.unrealizedPnl || '0'),
         })
       }
