@@ -5,6 +5,7 @@
  * and a trade configurator that auto-fills when clicking a position.
  */
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import ReactDOM from 'react-dom'
 
 interface Position {
   coin: string
@@ -427,7 +428,7 @@ export function LiquidationDashboard({ onClose }: { onClose: () => void }): Reac
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
-  return (
+  return ReactDOM.createPortal(
     <div className="ldash-overlay">
       <div className="ldash-container">
         {/* Header */}
@@ -693,6 +694,7 @@ export function LiquidationDashboard({ onClose }: { onClose: () => void }): Reac
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

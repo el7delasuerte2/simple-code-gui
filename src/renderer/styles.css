@@ -5990,11 +5990,12 @@ html, body, #root {
   display: flex;
   flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
-/* Left: positions area */
+/* Left: positions area - gets all remaining space */
 .ldash-positions-area {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
   overflow-y: auto;
   padding: 8px;
@@ -6153,15 +6154,28 @@ html, body, #root {
   padding: 16px 8px;
 }
 
-/* Right: config area */
+/* Right: config area - fixed width, shrinks on small screens */
 .ldash-config-area {
-  width: 340px;
-  min-width: 300px;
+  flex: 0 0 340px;
+  max-width: 340px;
   border-left: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   background: var(--bg-elevated);
   overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .ldash-main-content {
+    flex-direction: column;
+  }
+  .ldash-config-area {
+    flex: 0 0 auto;
+    max-width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    max-height: 300px;
+  }
 }
 
 /* Tabs */
