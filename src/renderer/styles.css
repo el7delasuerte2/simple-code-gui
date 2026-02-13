@@ -5105,6 +5105,295 @@ html, body, #root {
 }
 
 /* ============================================
+   Liquidation Panel
+   ============================================ */
+
+.liq-panel {
+  border-top: 1px solid var(--border-color);
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.liq-panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+  user-select: none;
+}
+
+.liq-panel-header:hover {
+  background: var(--bg-hover);
+}
+
+.liq-toggle {
+  font-size: 10px;
+  color: var(--text-muted);
+  width: 12px;
+}
+
+.liq-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.liq-count {
+  font-size: 10px;
+  padding: 1px 5px;
+  background: var(--danger);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  min-width: 18px;
+  text-align: center;
+}
+
+.liq-settings-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+  line-height: 1;
+}
+
+.liq-settings-btn:hover {
+  color: var(--text-primary);
+}
+
+.liq-panel-content {
+  padding: var(--space-xs) 0 0 4px;
+}
+
+.liq-loading,
+.liq-empty {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-sm);
+}
+
+.liq-error {
+  font-size: 11px;
+  color: var(--danger);
+  text-align: center;
+  padding: var(--space-sm);
+}
+
+.liq-summary {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+  font-size: 10px;
+  padding: 2px 0 var(--space-xs);
+}
+
+.liq-summary-long {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.liq-summary-short {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.liq-summary-divider {
+  color: var(--text-muted);
+}
+
+.liq-positions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.liq-position {
+  padding: 4px 6px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid transparent;
+}
+
+.liq-position.long {
+  border-left-color: #4ade80;
+}
+
+.liq-position.short {
+  border-left-color: #f87171;
+}
+
+.liq-pos-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.liq-pos-side {
+  font-size: 10px;
+  font-weight: 700;
+  width: 12px;
+  text-align: center;
+}
+
+.liq-pos-side.long {
+  color: #4ade80;
+}
+
+.liq-pos-side.short {
+  color: #f87171;
+}
+
+.liq-pos-coin {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.liq-pos-size {
+  font-size: 10px;
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.liq-pos-leverage {
+  font-size: 10px;
+  color: #38bdf8;
+  margin-left: auto;
+}
+
+.liq-pos-distance {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 32px;
+  text-align: right;
+}
+
+.liq-pos-distance.warning {
+  color: #fbbf24;
+}
+
+.liq-pos-distance.critical {
+  color: #f87171;
+  animation: liq-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes liq-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.liq-pos-bottom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+}
+
+.liq-pos-wallet {
+  font-size: 9px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.liq-pos-arrow {
+  font-size: 9px;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.liq-pos-liq-price {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.liq-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: var(--space-xs) 0 0;
+  margin-top: var(--space-xs);
+}
+
+.liq-refresh-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+  transition: color var(--transition-fast);
+  line-height: 1;
+}
+
+.liq-refresh-btn:hover {
+  color: var(--accent);
+}
+
+.liq-settings {
+  padding: 0 0 var(--space-xs);
+  margin-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.liq-settings label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.liq-settings input {
+  width: 100%;
+  font-size: 11px;
+  padding: 4px 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  margin-bottom: 4px;
+  box-sizing: border-box;
+}
+
+.liq-settings input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.liq-settings-save {
+  width: 100%;
+  font-size: 10px;
+  padding: 4px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background var(--transition-fast);
+}
+
+.liq-settings-save:hover {
+  opacity: 0.85;
+}
+
+/* ============================================
    Version Indicator
    ============================================ */
 

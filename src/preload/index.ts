@@ -6,6 +6,7 @@ import { voiceHandlers } from './handlers/voice.js'
 import { cliHandlers } from './handlers/cli.js'
 import { beadsHandlers } from './handlers/beads.js'
 import { miscHandlers } from './handlers/misc.js'
+import { liquidationHandlers } from './handlers/liquidation.js'
 import type { ElectronAPI } from './types/api.js'
 
 // Re-export types for external consumers
@@ -15,6 +16,7 @@ export type { BeadsTask, BeadsCloseResult } from './types/beads.js'
 export type { VoiceSettings } from './types/voice.js'
 export type { Extension } from './types/extension.js'
 export type { ElectronAPI } from './types/api.js'
+export type { LiquidationPosition, LiquidationFetchResult } from './types/liquidation.js'
 
 const api: ElectronAPI = {
   ...workspaceHandlers,
@@ -22,7 +24,8 @@ const api: ElectronAPI = {
   ...voiceHandlers,
   ...cliHandlers,
   ...beadsHandlers,
-  ...miscHandlers
+  ...miscHandlers,
+  ...liquidationHandlers
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)

@@ -17,6 +17,7 @@ import {
   registerExtensionHandlers,
   registerWindowHandlers,
   registerGsdHandlers,
+  registerLiquidationHandlers,
 } from './ipc/index.js'
 
 import { setupAppConfig, setupSecurityHeaders } from './app/app-setup.js'
@@ -64,6 +65,7 @@ registerVoiceHandlers(getMainWindow)
 registerExtensionHandlers()
 registerWindowHandlers(getMainWindow)
 registerGsdHandlers()
+registerLiquidationHandlers()
 registerWorkspaceHandlers(sessionStore, getMainWindow)
 registerPtyHandlers(ptyManager, sessionStore, apiServerManager, ptyToProject, ptyToBackend, getMainWindow)
 registerServerHandlers(apiServerManager, mobileServer)

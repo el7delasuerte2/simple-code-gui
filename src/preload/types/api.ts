@@ -3,6 +3,7 @@ import type { Workspace, Session } from './workspace.js'
 import type { BeadsTask, BeadsCloseResult } from './beads.js'
 import type { VoiceSettings } from './voice.js'
 import type { Extension } from './extension.js'
+import type { LiquidationFetchResult } from './liquidation.js'
 
 export interface ElectronAPI {
   // Workspace
@@ -316,4 +317,12 @@ export interface ElectronAPI {
   extensionsAddCustomUrl: (url: string) => Promise<{ success: boolean }>
   extensionsRemoveCustomUrl: (url: string) => Promise<{ success: boolean }>
   extensionsGetCustomUrls: () => Promise<string[]>
+
+  // Liquidation Data (Hyperliquid)
+  liquidationFetch: (settings?: {
+    wallets?: string[]
+    coins?: string[]
+    maxDistancePct?: number
+  }) => Promise<LiquidationFetchResult>
+  liquidationGetMids: () => Promise<{ success: boolean; mids?: Record<string, string>; error?: string }>
 }
