@@ -87,28 +87,13 @@ function DashPositionRow({
   isSelected: boolean
   onSelect: (pos: Position) => void
 }): React.ReactElement {
+  // MoonDev format: 0x8f BTC $1.8M 40x 0.8% → $68470
   return (
     <div
       className={`ldash-row ${pos.side} ${isSelected ? 'selected' : ''}`}
       onClick={() => onSelect(pos)}
       style={{ cursor: 'pointer' }}
     >
-      <span className="ldash-coin">{pos.coin}</span>
-      <span className="ldash-size">{formatUsd(pos.positionSize)}</span>
-      <span className="ldash-lev">{pos.leverage}x</span>
-      <span className={`ldash-pnl ${pos.unrealizedPnl >= 0 ? 'profit' : 'loss'}`}>
-        {formatPnl(pos.unrealizedPnl)}
-      </span>
-      {pos.pctToLiquidation >= 0 ? (
-        <span className={`ldash-dist ${pos.pctToLiquidation < 2 ? 'critical' : pos.pctToLiquidation < 5 ? 'warning' : ''}`}>
-          {pos.pctToLiquidation.toFixed(1)}%
-        </span>
-      ) : (
-        <span className="ldash-dist safe">safe</span>
-      )}
-      {pos.liquidationPrice > 0 && (
-        <span className="ldash-liq-px">${formatPrice(pos.liquidationPrice)}</span>
-      )}
       <span
         className="ldash-wallet"
         onClick={(e) => {
@@ -119,6 +104,14 @@ function DashPositionRow({
       >
         {pos.wallet}
       </span>
+      <span className="ldash-coin">{pos.coin}</span>
+      <span className="ldash-size">{formatUsd(pos.positionSize)}</span>
+      <span className="ldash-lev">{pos.leverage}x</span>
+      <span className={`ldash-dist ${pos.pctToLiquidation < 2 ? 'critical' : pos.pctToLiquidation < 5 ? 'warning' : ''}`}>
+        {pos.pctToLiquidation.toFixed(1)}%
+      </span>
+      <span className="ldash-arrow">{'\u2192'}</span>
+      <span className="ldash-liq-px">${formatPrice(pos.liquidationPrice)}</span>
     </div>
   )
 }
@@ -127,12 +120,15 @@ function TradeConfigurator({
   config,
   onChange,
   availableCoins,
+  liqPrices,
 }: {
   config: TradeConfig
   onChange: (c: TradeConfig) => void
   availableCoins: string[]
+  liqPrices: number[]
 }): React.ReactElement {
   const update = (partial: Partial<TradeConfig>) => onChange({ ...config, ...partial })
+  const computedMargin = config.marginPct * config.leverage
 
   return (
     <div className="ldash-configurator">
@@ -195,6 +191,9 @@ function TradeConfigurator({
             </button>
           ))}
         </div>
+        <span className="ldash-config-computed">
+          = Margin <strong>${config.marginPct}</strong> {'\u00D7'} <span className="ldash-config-accent">{config.leverage}x</span> = <strong>${computedMargin.toFixed(1)}</strong>
+        </span>
       </div>
 
       {/* Row 3: Ticks */}
@@ -285,6 +284,24 @@ function TradeConfigurator({
         </div>
         <span className="ldash-config-label">liqs</span>
       </div>
+
+      {/* Select liquidation price */}
+      {liqPrices.length > 0 && (
+        <div className="ldash-config-row ldash-config-liq-prices">
+          <label className="ldash-config-label">Liq prices:</label>
+          <div className="ldash-config-liq-scroll">
+            {liqPrices.map((px, i) => (
+              <button
+                key={i}
+                className="ldash-config-liq-btn"
+                onClick={() => {/* future: set target price */}}
+              >
+                ${formatPrice(px)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Action bar */}
       <div className={`ldash-config-action-bar ${config.action === 'BUY' ? 'buy' : 'sell'}`}>
@@ -423,6 +440,17 @@ export function LiquidationDashboard({ onClose }: { onClose: () => void }): Reac
 
   // Band display data
   const BAND_KEYS = ['1', '2', '3', '5', '10', '15']
+
+  // Extract unique liq prices for the selected coin, sorted, for the configurator
+  const liqPricesForCoin = useMemo(() => {
+    const coin = tradeConfig.coin
+    const prices = filtered
+      .filter((p) => p.coin === coin && p.liquidationPrice > 0)
+      .map((p) => p.liquidationPrice)
+    // Round and dedupe
+    const unique = Array.from(new Set(prices.map((p) => Math.round(p * 100) / 100)))
+    return unique.sort((a, b) => b - a).slice(0, 15)
+  }, [filtered, tradeConfig.coin])
 
   // Close on Escape
   useEffect(() => {
@@ -571,10 +599,7 @@ export function LiquidationDashboard({ onClose }: { onClose: () => void }): Reac
                 <div className="ldash-columns">
                   <div className="ldash-col">
                     <div className="ldash-col-header long">
-                      {'\u2197'} LONGS ({longs.length})
-                    </div>
-                    <div className="ldash-col-head-row">
-                      <span>Coin</span><span>Size</span><span>Lev</span><span>PnL</span><span>Dist</span><span>Liq $</span><span>Wallet</span>
+                      {'\u2197'} Longs Near Liq ({formatUsd(bands?.longsByPct?.['2'] ?? 0)} in 2%)
                     </div>
                     {longs.map((pos, i) => (
                       <DashPositionRow
@@ -584,14 +609,11 @@ export function LiquidationDashboard({ onClose }: { onClose: () => void }): Reac
                         onSelect={handleSelectPosition}
                       />
                     ))}
-                    {longs.length === 0 && <div className="ldash-empty">No longs</div>}
+                    {longs.length === 0 && <div className="ldash-empty">No longs near liq</div>}
                   </div>
                   <div className="ldash-col">
                     <div className="ldash-col-header short">
-                      {'\u2198'} SHORTS ({shorts.length})
-                    </div>
-                    <div className="ldash-col-head-row">
-                      <span>Coin</span><span>Size</span><span>Lev</span><span>PnL</span><span>Dist</span><span>Liq $</span><span>Wallet</span>
+                      {'\u2198'} Shorts Near Liq ({formatUsd(bands?.shortsByPct?.['2'] ?? 0)} in 2%)
                     </div>
                     {shorts.map((pos, i) => (
                       <DashPositionRow
@@ -601,7 +623,7 @@ export function LiquidationDashboard({ onClose }: { onClose: () => void }): Reac
                         onSelect={handleSelectPosition}
                       />
                     ))}
-                    {shorts.length === 0 && <div className="ldash-empty">No shorts</div>}
+                    {shorts.length === 0 && <div className="ldash-empty">No shorts near liq</div>}
                   </div>
                 </div>
               </div>
@@ -625,6 +647,7 @@ export function LiquidationDashboard({ onClose }: { onClose: () => void }): Reac
                     config={tradeConfig}
                     onChange={setTradeConfig}
                     availableCoins={availableTickers.length > 0 ? availableTickers : ['BTC', 'ETH', 'SOL']}
+                    liqPrices={liqPricesForCoin}
                   />
                 )}
 

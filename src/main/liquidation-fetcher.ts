@@ -21,10 +21,10 @@ const DEFAULT_MAX_DISTANCE_PCT = 15
 const MIN_LEVERAGE = 3
 
 // Minimum position size ($)
-const MIN_POSITION_USD = 1000
+const MIN_POSITION_USD = 500
 
-// How many leaderboard wallets to check
-const LEADERBOARD_TOP_N = 50
+// How many leaderboard wallets to check (more wallets = more near-liq positions found)
+const LEADERBOARD_TOP_N = 200
 
 // Distance bands for aggregation (percentages)
 const BANDS = [1, 2, 3, 5, 10, 15]
@@ -112,11 +112,11 @@ async function fetchLeaderboardWallets(): Promise<string[]> {
 
     const rows = result.leaderboardRows || []
     const wallets = rows
-      .filter((r) => parseFloat(r.accountValue || '0') > 500000)
+      .filter((r) => parseFloat(r.accountValue || '0') > 100000)
       .slice(0, LEADERBOARD_TOP_N)
       .map((r) => r.ethAddress.toLowerCase())
 
-    console.log(`[LiqFetcher] Leaderboard: ${rows.length} total, ${wallets.length} selected (>$500K, top ${LEADERBOARD_TOP_N})`)
+    console.log(`[LiqFetcher] Leaderboard: ${rows.length} total, ${wallets.length} selected (>$100K, top ${LEADERBOARD_TOP_N})`)
     leaderboardCache = { wallets, timestamp: now }
     return wallets
   } catch (e) {
@@ -164,7 +164,7 @@ export async function computeNearLiquidations(
 
   const positions: NearLiqPosition[] = []
 
-  const BATCH_SIZE = 10
+  const BATCH_SIZE = 20
   for (let batch = 0; batch < walletsToCheck.length; batch += BATCH_SIZE) {
     const batchWallets = walletsToCheck.slice(batch, batch + BATCH_SIZE)
     const results = await Promise.allSettled(
