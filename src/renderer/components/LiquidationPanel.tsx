@@ -8,14 +8,14 @@ interface Position {
   markPrice: number
   entryPrice: number
   side: 'long' | 'short'
-  pctToLiquidation: number
+  pctToLiquidation: number  // -1 means no liq price (cross margin, safe)
   wallet: string
   unrealizedPnl: number
 }
 
 const DEFAULT_COINS: string[] = []  // empty = show ALL coins
 const DEFAULT_REFRESH = 30
-const DEFAULT_MAX_DIST = 25  // % distance from liquidation price
+const DEFAULT_MAX_DIST = 100  // show all positions
 
 function formatUsd(v: number): string {
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
@@ -28,6 +28,13 @@ function formatPrice(v: number): string {
   if (v >= 100) return v.toFixed(2)
   if (v >= 1) return v.toFixed(4)
   return v.toFixed(6)
+}
+
+function formatPnl(v: number): string {
+  const sign = v >= 0 ? '+' : ''
+  if (Math.abs(v) >= 1_000_000) return `${sign}$${(v / 1_000_000).toFixed(1)}M`
+  if (Math.abs(v) >= 1_000) return `${sign}$${(v / 1_000).toFixed(0)}K`
+  return `${sign}$${v.toFixed(0)}`
 }
 
 export function LiquidationPanel(): React.ReactElement {
@@ -73,7 +80,6 @@ export function LiquidationPanel(): React.ReactElement {
           coins: watchedCoins.length > 0 ? watchedCoins : undefined,
           maxDistancePct,
         })
-        console.log('[LiqPanel] fetch result:', result)
         if (!mountedRef.current) return
         if (result?.success && result.positions) {
           setPositions(result.positions)
@@ -138,7 +144,7 @@ export function LiquidationPanel(): React.ReactElement {
         <span className="liq-toggle" aria-hidden="true">
           {isExpanded ? '\u25BC' : '\u25B6'}
         </span>
-        <span className="liq-title">Near Liquidation</span>
+        <span className="liq-title">Whale Positions</span>
         {positions.length > 0 && <span className="liq-count">{positions.length}</span>}
         <button
           className="liq-settings-btn"
@@ -157,7 +163,7 @@ export function LiquidationPanel(): React.ReactElement {
         <div className="liq-panel-content">
           {showSettings && (
             <div className="liq-settings">
-              <label>Coins (comma-separated)</label>
+              <label>Filter coins (comma-separated, empty = all)</label>
               <input
                 type="text"
                 value={coinsInput}
@@ -165,7 +171,7 @@ export function LiquidationPanel(): React.ReactElement {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSaveCoins()
                 }}
-                placeholder="Leave empty for all coins, or: BTC, ETH, SOL"
+                placeholder="BTC, ETH, SOL"
               />
               <button className="liq-settings-save" onClick={handleSaveCoins}>
                 Apply
@@ -175,7 +181,7 @@ export function LiquidationPanel(): React.ReactElement {
 
           {loading && positions.length === 0 && (
             <div className="liq-loading" role="status">
-              Loading...
+              Loading whale positions...
             </div>
           )}
 
@@ -186,7 +192,7 @@ export function LiquidationPanel(): React.ReactElement {
           )}
 
           {!loading && !error && positions.length === 0 && (
-            <div className="liq-empty">No positions near liquidation</div>
+            <div className="liq-empty">No whale positions found</div>
           )}
 
           {positions.length > 0 && (
@@ -211,16 +217,27 @@ export function LiquidationPanel(): React.ReactElement {
                       <span className="liq-pos-coin">{pos.coin}</span>
                       <span className="liq-pos-size">{formatUsd(pos.positionSize)}</span>
                       <span className="liq-pos-leverage">{pos.leverage}x</span>
-                      <span
-                        className={`liq-pos-distance ${pos.pctToLiquidation < 2 ? 'critical' : pos.pctToLiquidation < 5 ? 'warning' : ''}`}
-                      >
-                        {pos.pctToLiquidation.toFixed(1)}%
-                      </span>
+                      {pos.pctToLiquidation >= 0 ? (
+                        <span
+                          className={`liq-pos-distance ${pos.pctToLiquidation < 2 ? 'critical' : pos.pctToLiquidation < 5 ? 'warning' : ''}`}
+                        >
+                          {pos.pctToLiquidation.toFixed(1)}%
+                        </span>
+                      ) : (
+                        <span className="liq-pos-distance safe">safe</span>
+                      )}
                     </div>
                     <div className="liq-pos-bottom">
                       <span className="liq-pos-wallet">{pos.wallet}</span>
-                      <span className="liq-pos-arrow">{'\u2192'}</span>
-                      <span className="liq-pos-liq-price">${formatPrice(pos.liquidationPrice)}</span>
+                      <span className={`liq-pos-pnl ${pos.unrealizedPnl >= 0 ? 'profit' : 'loss'}`}>
+                        {formatPnl(pos.unrealizedPnl)}
+                      </span>
+                      {pos.liquidationPrice > 0 && (
+                        <>
+                          <span className="liq-pos-arrow">{'\u2192'}</span>
+                          <span className="liq-pos-liq-price">${formatPrice(pos.liquidationPrice)}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}

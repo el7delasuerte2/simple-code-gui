@@ -5289,6 +5289,11 @@ html, body, #root {
   animation: liq-pulse 1.5s ease-in-out infinite;
 }
 
+.liq-pos-distance.safe {
+  color: #6b7280;
+  font-size: 9px;
+}
+
 @keyframes liq-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
@@ -5305,6 +5310,19 @@ html, body, #root {
   font-size: 9px;
   color: var(--text-muted);
   opacity: 0.7;
+}
+
+.liq-pos-pnl {
+  font-size: 9px;
+  margin-left: auto;
+}
+
+.liq-pos-pnl.profit {
+  color: #4ade80;
+}
+
+.liq-pos-pnl.loss {
+  color: #f87171;
 }
 
 .liq-pos-arrow {

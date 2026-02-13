@@ -1,18 +1,14 @@
 /**
- * Hyperliquid Liquidation Data Fetcher
+ * Hyperliquid Position & Liquidation Data Fetcher
  *
- * Fetches position data from the public Hyperliquid API and computes
- * which positions are near their liquidation price.
- *
- * Uses two strategies:
- * 1. Static list of known whale wallets
- * 2. Dynamic discovery via leaderboard API
+ * Fetches position data from the public Hyperliquid API.
+ * Shows whale positions sorted by size, with liquidation distance when available.
  */
 import https from 'https'
 
 const HL_API_URL = 'https://api.hyperliquid.xyz/info'
 
-// Known active whale wallets (public, tracked on CoinGlass/Lookonchain)
+// Known active whale wallets with large positions
 const KNOWN_WHALE_WALLETS = [
   '0x5078c2fbea2b2ad61bc840bc023e35fce56bedb6', // James Wynn
   '0x20c2d95a3dfdca9e9ad12794d5fa6fad99da44f5', // @qwatio 50x Brother
@@ -23,12 +19,8 @@ const KNOWN_WHALE_WALLETS = [
   '0xb317d2bc2d3d2df5fa441b5bae0ab9d8b07283ae', // CoinGlass tracked
   '0xb78d97390a96a17fd2b58fedbeb3dd876c8f660a', // Andrew Tate
   '0xa5232e97b4ded3d2ef25be059c3489e61be475aa', // 0xa523 whale
-  '0xecb63caa47c7c4e77f60f1ce858cf28dc2b82b00', // CoinGlass tracked
+  '0xecb63caa47c7c4e77f60f1ce858cf28dc2b82b00', // CG whale2 - 85 positions
 ]
-
-// Cache leaderboard wallets (refresh every 10 minutes)
-let leaderboardCache: { wallets: string[]; timestamp: number } = { wallets: [], timestamp: 0 }
-const LEADERBOARD_CACHE_TTL = 10 * 60 * 1000
 
 interface RawPosition {
   coin: string
@@ -98,57 +90,6 @@ export async function fetchClearinghouseState(wallet: string): Promise<{
   }
 }
 
-/**
- * Fetch leaderboard wallets from Hyperliquid
- * Returns top traders by PnL who likely have active large positions
- */
-async function fetchLeaderboardWallets(): Promise<string[]> {
-  const now = Date.now()
-  if (leaderboardCache.wallets.length > 0 && now - leaderboardCache.timestamp < LEADERBOARD_CACHE_TTL) {
-    return leaderboardCache.wallets
-  }
-
-  try {
-    // Fetch leaderboard - top traders by performance window
-    const result = await postHyperliquid({
-      type: 'leaderboard',
-      timeWindow: 'day',
-    }) as Array<{
-      ethAddress: string
-      accountValue: string
-      windowPerformances: Array<[string, { pnl: string; vlm: string }]>
-    }> | { leaderboardRows: Array<{ ethAddress: string; accountValue: string }> }
-
-    let wallets: string[] = []
-
-    if (Array.isArray(result)) {
-      // Direct array format
-      wallets = result
-        .filter((r) => parseFloat(r.accountValue || '0') > 100000) // >$100K accounts
-        .slice(0, 50)
-        .map((r) => r.ethAddress)
-    } else if (result && 'leaderboardRows' in result) {
-      // Wrapped format
-      wallets = result.leaderboardRows
-        .filter((r) => parseFloat(r.accountValue || '0') > 100000)
-        .slice(0, 50)
-        .map((r) => r.ethAddress)
-    }
-
-    if (wallets.length > 0) {
-      console.log(`[LiqFetcher] Discovered ${wallets.length} leaderboard wallets`)
-      leaderboardCache = { wallets, timestamp: now }
-    } else {
-      console.log('[LiqFetcher] Leaderboard returned no qualifying wallets')
-    }
-
-    return wallets
-  } catch (e) {
-    console.log('[LiqFetcher] Leaderboard fetch failed (non-critical):', e instanceof Error ? e.message : e)
-    return leaderboardCache.wallets // return stale cache if available
-  }
-}
-
 export interface NearLiqPosition {
   coin: string
   positionSize: number
@@ -171,19 +112,17 @@ export async function computeNearLiquidations(
   const mids = await fetchAllMids()
   console.log(`[LiqFetcher] Got ${Object.keys(mids).length} mid prices`)
 
-  // Combine: user wallets + known whales + leaderboard discovery
-  const leaderboardWallets = await fetchLeaderboardWallets()
+  // Combine user wallets with known whales
   const allWallets = new Set<string>([
     ...(wallets.length > 0 ? wallets : []),
     ...KNOWN_WHALE_WALLETS,
-    ...leaderboardWallets,
   ])
   const walletsToCheck = Array.from(allWallets)
-  console.log(`[LiqFetcher] Checking ${walletsToCheck.length} unique wallets (${KNOWN_WHALE_WALLETS.length} known + ${leaderboardWallets.length} leaderboard)`)
+  console.log(`[LiqFetcher] Checking ${walletsToCheck.length} wallets`)
 
   const positions: NearLiqPosition[] = []
 
-  // Fetch in batches of 10 to avoid overwhelming the API
+  // Fetch in batches of 10
   const BATCH_SIZE = 10
   for (let batch = 0; batch < walletsToCheck.length; batch += BATCH_SIZE) {
     const batchWallets = walletsToCheck.slice(batch, batch + BATCH_SIZE)
@@ -207,23 +146,29 @@ export async function computeNearLiquidations(
         const coin = pos.coin
         if (coinFilter.length > 0 && !coinFilter.includes(coin)) continue
 
-        const liqPx = pos.liquidationPx ? parseFloat(pos.liquidationPx) : null
-        if (!liqPx || liqPx <= 0) continue
-
         const midStr = mids[coin]
         if (!midStr) continue
         const markPrice = parseFloat(midStr)
         if (markPrice <= 0) continue
 
-        const pctToLiq = (Math.abs(markPrice - liqPx) / markPrice) * 100
+        const positionValue = Math.abs(parseFloat(pos.positionValue || '0'))
+        // Skip tiny positions (< $1K)
+        if (positionValue < 1000) continue
 
-        if (pctToLiq > maxDistancePct) continue
+        const liqPx = pos.liquidationPx ? parseFloat(pos.liquidationPx) : null
+        let pctToLiq = -1 // -1 means no liquidation price (fully collateralized / cross margin)
+
+        if (liqPx && liqPx > 0) {
+          pctToLiq = (Math.abs(markPrice - liqPx) / markPrice) * 100
+          // If maxDistancePct filter is set and position has a liq price, apply it
+          if (maxDistancePct < 100 && pctToLiq > maxDistancePct) continue
+        }
 
         positions.push({
           coin,
-          positionSize: Math.abs(parseFloat(pos.positionValue || '0')),
+          positionSize: positionValue,
           leverage: pos.leverage?.value || 1,
-          liquidationPrice: liqPx,
+          liquidationPrice: liqPx || 0,
           markPrice,
           entryPrice: parseFloat(pos.entryPx),
           side: size > 0 ? 'long' : 'short',
@@ -235,9 +180,19 @@ export async function computeNearLiquidations(
     }
   }
 
-  // Sort by closest to liquidation first
-  positions.sort((a, b) => a.pctToLiquidation - b.pctToLiquidation)
+  // Sort: positions with liq price first (by closest), then by size
+  positions.sort((a, b) => {
+    // Both have liq prices -> sort by closest
+    if (a.pctToLiquidation >= 0 && b.pctToLiquidation >= 0) {
+      return a.pctToLiquidation - b.pctToLiquidation
+    }
+    // Only one has liq price -> it comes first
+    if (a.pctToLiquidation >= 0) return -1
+    if (b.pctToLiquidation >= 0) return 1
+    // Neither has liq price -> sort by position size
+    return b.positionSize - a.positionSize
+  })
 
-  console.log(`[LiqFetcher] Found ${positions.length} positions within ${maxDistancePct}%`)
+  console.log(`[LiqFetcher] Found ${positions.length} positions (${positions.filter(p => p.pctToLiquidation >= 0).length} with liq price)`)
   return positions
 }
