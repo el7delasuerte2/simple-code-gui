@@ -17,12 +17,12 @@ export function registerLiquidationHandlers() {
         const coins = settings?.coins ?? []
         const maxDist = settings?.maxDistancePct ?? 15
 
-        console.log(`[Liquidation] Fetching: ${wallets.length || 'default'} wallets, coins=${coins.length ? coins.join(',') : 'ALL'}, maxDist=${maxDist}%`)
-        const positions = await computeNearLiquidations(wallets, maxDist, coins)
-        console.log(`[Liquidation] Found ${positions.length} positions near liquidation`)
+        const { positions, bands } = await computeNearLiquidations(wallets, maxDist, coins)
+        console.log(`[Liquidation] ${positions.length} near-liq positions | L in 2%: $${(bands.longsByPct['2'] / 1000).toFixed(0)}K | S in 2%: $${(bands.shortsByPct['2'] / 1000).toFixed(0)}K`)
         return {
           success: true,
           positions,
+          bands,
           lastUpdated: Date.now(),
         }
       } catch (e: unknown) {

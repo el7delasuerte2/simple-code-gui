@@ -5695,6 +5695,54 @@ html, body, #root {
   background: var(--accent-hover);
 }
 
+/* Sidebar band signal display */
+.liq-bands {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.liq-band-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.liq-band-label {
+  color: var(--text-muted);
+  min-width: 32px;
+  font-weight: 500;
+}
+
+.liq-band-long {
+  color: #4ade80;
+  font-weight: 600;
+  flex: 1;
+}
+
+.liq-band-short {
+  color: #f87171;
+  font-weight: 600;
+  flex: 1;
+}
+
+.liq-band-signal {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.liq-band-signal.bullish {
+  color: #4ade80;
+}
+
+.liq-band-signal.bearish {
+  color: #f87171;
+}
+
 /* ============================================
    Liquidation Dashboard (full-screen overlay)
    ============================================ */
@@ -5940,31 +5988,63 @@ html, body, #root {
   font-weight: 400;
 }
 
-/* Volume bar */
-.ldash-volume-bar {
+/* Liquidation bands table - THE key signal */
+.ldash-bands {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 4px 16px;
+  flex-direction: column;
+  padding: 4px 16px 6px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  gap: 1px;
+}
+
+.ldash-bands-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   font-size: 11px;
+}
+
+.ldash-bands-header {
+  color: var(--text-muted);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ldash-bands-label {
+  min-width: 60px;
+  font-weight: 600;
   flex-shrink: 0;
 }
 
-.ldash-vol-long {
+.ldash-bands-cell {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.ldash-bands-cell.has-value {
+  font-weight: 600;
+}
+
+.ldash-bands-long {
   color: #4ade80;
-  font-weight: 600;
 }
 
-.ldash-vol-short {
+.ldash-bands-long .ldash-bands-label {
+  color: #4ade80;
+}
+
+.ldash-bands-short {
   color: #f87171;
-  font-weight: 600;
 }
 
-.ldash-vol-sep {
-  color: var(--text-muted);
+.ldash-bands-short .ldash-bands-label {
+  color: #f87171;
 }
 
 /* Body */

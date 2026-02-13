@@ -34,8 +34,13 @@ interface TradeConfig {
   specificLiqSide: 'LONG' | 'SHORT'
 }
 
+interface Bands {
+  longsByPct: Record<string, number>
+  shortsByPct: Record<string, number>
+}
+
 const DEFAULT_REFRESH = 15
-const DEFAULT_MAX_DIST = 100
+const DEFAULT_MAX_DIST = 15
 const LEVERAGE_OPTIONS = [1, 5, 10, 20, 40, 50]
 const MARGIN_OPTIONS = [0.1, 0.5, 1, 2, 5, 10]
 const TICK_OPTIONS = [1, 2, 3, 5, 8, 10, 15]
@@ -306,6 +311,7 @@ const DEFAULT_TRADE_CONFIG: TradeConfig = {
 
 export function LiquidationDashboard({ onClose }: { onClose: () => void }): React.ReactElement {
   const [positions, setPositions] = useState<Position[]>([])
+  const [bands, setBands] = useState<Bands | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
@@ -343,8 +349,9 @@ export function LiquidationDashboard({ onClose }: { onClose: () => void }): Reac
     try {
       const result = await window.electronAPI?.liquidationFetch({ maxDistancePct: DEFAULT_MAX_DIST })
       if (!mountedRef.current) return
-      if (result?.success && result.positions) {
-        setPositions(result.positions)
+      if (result?.success) {
+        setPositions(result.positions || [])
+        setBands(result.bands || null)
         setLastUpdated(result.lastUpdated ?? Date.now())
         setError(null)
       } else {
@@ -414,12 +421,8 @@ export function LiquidationDashboard({ onClose }: { onClose: () => void }): Reac
     }))
   }, [])
 
-  // Aggregated liq volume by timeframe (approximation from position sizes)
-  const liqVolume = useMemo(() => {
-    const longTotal = longs.reduce((s, p) => s + p.positionSize, 0)
-    const shortTotal = shorts.reduce((s, p) => s + p.positionSize, 0)
-    return { longTotal, shortTotal }
-  }, [longs, shorts])
+  // Band display data
+  const BAND_KEYS = ['1', '2', '3', '5', '10', '15']
 
   // Close on Escape
   useEffect(() => {
@@ -526,12 +529,29 @@ export function LiquidationDashboard({ onClose }: { onClose: () => void }): Reac
           </div>
         )}
 
-        {/* Aggregated volume bar */}
-        {filtered.length > 0 && (
-          <div className="ldash-volume-bar">
-            <span className="ldash-vol-long">LONGS {formatUsd(liqVolume.longTotal)}</span>
-            <span className="ldash-vol-sep">|</span>
-            <span className="ldash-vol-short">SHORTS {formatUsd(liqVolume.shortTotal)}</span>
+        {/* Liquidation bands - THE key signal */}
+        {bands && (
+          <div className="ldash-bands">
+            <div className="ldash-bands-row ldash-bands-header">
+              <span className="ldash-bands-label">Dist</span>
+              {BAND_KEYS.map((k) => (
+                <span key={k} className="ldash-bands-cell">{k}%</span>
+              ))}
+            </div>
+            <div className="ldash-bands-row ldash-bands-long">
+              <span className="ldash-bands-label">{'\u2197'} Longs</span>
+              {BAND_KEYS.map((k) => {
+                const val = bands.longsByPct[k] ?? 0
+                return <span key={k} className={`ldash-bands-cell ${val > 0 ? 'has-value' : ''}`}>{val > 0 ? formatUsd(val) : '-'}</span>
+              })}
+            </div>
+            <div className="ldash-bands-row ldash-bands-short">
+              <span className="ldash-bands-label">{'\u2198'} Shorts</span>
+              {BAND_KEYS.map((k) => {
+                const val = bands.shortsByPct[k] ?? 0
+                return <span key={k} className={`ldash-bands-cell ${val > 0 ? 'has-value' : ''}`}>{val > 0 ? formatUsd(val) : '-'}</span>
+              })}
+            </div>
           </div>
         )}
 
