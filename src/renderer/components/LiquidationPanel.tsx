@@ -15,7 +15,7 @@ interface Position {
 
 const DEFAULT_COINS: string[] = []  // empty = show ALL coins
 const DEFAULT_REFRESH = 30
-const DEFAULT_MAX_DIST = 100  // show all positions regardless of distance
+const DEFAULT_MAX_DIST = 25  // % distance from liquidation price
 
 function formatUsd(v: number): string {
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
