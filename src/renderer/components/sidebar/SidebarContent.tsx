@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Project, useWorkspaceStore } from '../../stores/workspace.js'
 import { BeadsPanel } from '../BeadsPanel.js'
 import { GSDStatus } from '../GSDStatus.js'
 import { LiquidationPanel } from '../LiquidationPanel.js'
+import { LiquidationDashboard } from '../LiquidationDashboard.js'
 import { ExtensionBrowser } from '../ExtensionBrowser.js'
 import { ClaudeMdEditor } from '../ClaudeMdEditor.js'
 import {
@@ -130,6 +131,8 @@ export function SidebarContent(props: SidebarContentProps): React.ReactElement {
     handleSelectExecutable,
     handleClearExecutable,
   } = handlers
+
+  const [showLiqDashboard, setShowLiqDashboard] = useState(false)
 
   return (
     <>
@@ -304,7 +307,7 @@ export function SidebarContent(props: SidebarContentProps): React.ReactElement {
         }}
       />
 
-      <LiquidationPanel />
+      <LiquidationPanel onOpenDashboard={() => setShowLiqDashboard(true)} />
 
       {voiceOutputEnabled && (
         <VoiceOptionsPanel
@@ -437,6 +440,11 @@ export function SidebarContent(props: SidebarContentProps): React.ReactElement {
             setCategoryContextMenu(null)
           }}
         />
+      )}
+
+      {/* Liquidation Dashboard (full-screen overlay) */}
+      {showLiqDashboard && (
+        <LiquidationDashboard onClose={() => setShowLiqDashboard(false)} />
       )}
     </>
   )

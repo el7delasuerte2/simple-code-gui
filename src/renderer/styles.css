@@ -5573,6 +5573,908 @@ html, body, #root {
   opacity: 0.85;
 }
 
+/* Compact sidebar widget styles */
+.liq-mini-summary {
+  display: flex;
+  gap: var(--space-sm);
+  font-size: 10px;
+  padding: 2px 0;
+  justify-content: center;
+}
+
+.liq-mini-long {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.liq-mini-short {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.liq-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.liq-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  border-left: 2px solid transparent;
+  font-size: 9px;
+  transition: background 0.1s;
+}
+
+.liq-compact-row:hover {
+  background: var(--bg-hover);
+}
+
+.liq-compact-row.long {
+  border-left-color: #4ade80;
+}
+
+.liq-compact-row.short {
+  border-left-color: #f87171;
+}
+
+.liq-compact-coin {
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 28px;
+}
+
+.liq-compact-size {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.liq-compact-lev {
+  color: #38bdf8;
+}
+
+.liq-compact-pnl {
+  margin-left: auto;
+}
+
+.liq-compact-pnl.profit {
+  color: #4ade80;
+}
+
+.liq-compact-pnl.loss {
+  color: #f87171;
+}
+
+.liq-compact-dist {
+  font-weight: 600;
+  min-width: 28px;
+  text-align: right;
+}
+
+.liq-compact-dist.warning {
+  color: #fbbf24;
+}
+
+.liq-compact-dist.critical {
+  color: #f87171;
+  animation: liq-pulse 1.5s ease-in-out infinite;
+}
+
+.liq-compact-dist.safe {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.liq-more-hint {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2px;
+}
+
+.liq-open-dashboard {
+  width: 100%;
+  margin-top: 4px;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.liq-open-dashboard:hover {
+  background: var(--accent-hover);
+}
+
+/* ============================================
+   Liquidation Dashboard (full-screen overlay)
+   ============================================ */
+
+.ldash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ldash-fade-in 0.2s ease;
+}
+
+@keyframes ldash-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ldash-container {
+  width: 96vw;
+  max-width: 1600px;
+  height: 92vh;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.ldash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+
+.ldash-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.ldash-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ldash-updated {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ldash-refresh,
+.ldash-close {
+  background: none;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.ldash-refresh:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.ldash-close:hover {
+  color: #f87171;
+  border-color: #f87171;
+}
+
+/* Filters */
+.ldash-filters {
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+
+.ldash-ticker-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.ldash-chip {
+  font-size: 11px;
+  padding: 3px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ldash-chip:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.ldash-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.ldash-chip-sm {
+  font-size: 10px;
+  padding: 2px 7px;
+}
+
+.ldash-chip-count {
+  font-size: 9px;
+  opacity: 0.8;
+}
+
+.ldash-chip-x {
+  font-size: 13px;
+  opacity: 0.6;
+  cursor: pointer;
+  margin-left: 2px;
+}
+
+.ldash-chip-x:hover {
+  opacity: 1;
+}
+
+.ldash-chip-add {
+  border-style: dashed;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 3px 12px;
+}
+
+.ldash-add-popup {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  margin-bottom: 4px;
+}
+
+.ldash-search-input {
+  width: 100%;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  box-sizing: border-box;
+}
+
+.ldash-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ldash-ticker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.ldash-ticker-opt {
+  font-size: 10px;
+  padding: 2px 6px;
+  border: 1px solid var(--border-default);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.ldash-ticker-opt:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.ldash-lev-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ldash-lev-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
+/* Summary */
+.ldash-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.ldash-summary-item {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ldash-summary-item.long {
+  color: #4ade80;
+}
+
+.ldash-summary-item.short {
+  color: #f87171;
+}
+
+.ldash-summary-item.total {
+  color: var(--text-muted);
+  margin-left: auto;
+  font-weight: 400;
+}
+
+/* Volume bar */
+.ldash-volume-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 4px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.ldash-vol-long {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.ldash-vol-short {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.ldash-vol-sep {
+  color: var(--text-muted);
+}
+
+/* Body */
+.ldash-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ldash-status {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 40px 16px;
+}
+
+.ldash-error {
+  color: #f87171;
+}
+
+.ldash-main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Left: positions area */
+.ldash-positions-area {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.ldash-columns {
+  display: flex;
+  gap: 8px;
+  height: 100%;
+}
+
+.ldash-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ldash-col-header {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-radius: 4px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.ldash-col-header.long {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+.ldash-col-header.short {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+}
+
+.ldash-col-head-row {
+  display: flex;
+  gap: 2px;
+  padding: 3px 8px;
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ldash-col-head-row span {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Position rows */
+.ldash-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  border-left: 2px solid transparent;
+  font-size: 11px;
+  transition: background 0.1s;
+}
+
+.ldash-row:hover {
+  background: var(--bg-hover);
+}
+
+.ldash-row.selected {
+  background: var(--bg-active);
+  outline: 1px solid var(--accent);
+}
+
+.ldash-row.long {
+  border-left-color: #4ade80;
+}
+
+.ldash-row.short {
+  border-left-color: #f87171;
+}
+
+.ldash-row > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ldash-coin {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ldash-size {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.ldash-lev {
+  color: #38bdf8;
+}
+
+.ldash-pnl.profit {
+  color: #4ade80;
+}
+
+.ldash-pnl.loss {
+  color: #f87171;
+}
+
+.ldash-dist {
+  font-weight: 600;
+}
+
+.ldash-dist.warning {
+  color: #fbbf24;
+}
+
+.ldash-dist.critical {
+  color: #f87171;
+  animation: liq-pulse 1.5s ease-in-out infinite;
+}
+
+.ldash-dist.safe {
+  color: #6b7280;
+  font-weight: 400;
+  font-size: 10px;
+}
+
+.ldash-liq-px {
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+
+.ldash-wallet {
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.ldash-wallet:hover {
+  color: var(--accent);
+}
+
+.ldash-empty {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 16px 8px;
+}
+
+/* Right: config area */
+.ldash-config-area {
+  width: 340px;
+  min-width: 300px;
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  overflow-y: auto;
+}
+
+/* Tabs */
+.ldash-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.ldash-tab {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.ldash-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.ldash-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Trade Configurator */
+.ldash-configurator {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ldash-config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ldash-config-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ldash-config-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ldash-config-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ldash-config-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.ldash-config-select {
+  font-size: 11px;
+  padding: 3px 6px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.ldash-config-select-sm {
+  width: 70px;
+}
+
+.ldash-config-input {
+  font-size: 11px;
+  padding: 3px 6px;
+  width: 70px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+}
+
+.ldash-config-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ldash-config-input-sm {
+  width: 50px;
+}
+
+.ldash-config-chips {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.ldash-config-chip {
+  font-size: 10px;
+  padding: 2px 7px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ldash-config-chip:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.ldash-config-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.ldash-config-chip-sm {
+  font-size: 9px;
+  padding: 2px 6px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ldash-config-chip-sm:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.ldash-config-chip-sm.active.long {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+.ldash-config-chip-sm.active.short {
+  background: rgba(248, 113, 113, 0.2);
+  border-color: #f87171;
+  color: #f87171;
+}
+
+.ldash-config-chip-sm.active.buy {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+.ldash-config-chip-sm.active.sell {
+  background: rgba(248, 113, 113, 0.2);
+  border-color: #f87171;
+  color: #f87171;
+}
+
+/* BUY/SELL action buttons */
+.ldash-action-btn {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ldash-action-btn.buy {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.ldash-action-btn.buy:hover,
+.ldash-action-btn.buy.active {
+  background: #4ade80;
+  border-color: #4ade80;
+  color: #000;
+}
+
+.ldash-action-btn.sell {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.ldash-action-btn.sell:hover,
+.ldash-action-btn.sell.active {
+  background: #f87171;
+  border-color: #f87171;
+  color: #fff;
+}
+
+/* Action bar at bottom of configurator */
+.ldash-config-action-bar {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 4px;
+}
+
+.ldash-config-action-bar.buy {
+  background: #4ade80;
+  color: #000;
+}
+
+.ldash-config-action-bar.buy:hover {
+  background: #22c55e;
+}
+
+.ldash-config-action-bar.sell {
+  background: #f87171;
+  color: #fff;
+}
+
+.ldash-config-action-bar.sell:hover {
+  background: #ef4444;
+}
+
+/* Tab content */
+.ldash-tab-content {
+  padding: 8px;
+}
+
+.ldash-tab-placeholder {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 24px 8px;
+}
+
+/* Position detail view */
+.ldash-pos-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ldash-pos-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ldash-pos-detail-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ldash-pos-detail-value {
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.ldash-pos-detail-value.long {
+  color: #4ade80;
+}
+
+.ldash-pos-detail-value.short {
+  color: #f87171;
+}
+
+.ldash-pos-detail-value.profit {
+  color: #4ade80;
+}
+
+.ldash-pos-detail-value.loss {
+  color: #f87171;
+}
+
+.ldash-pos-detail-value.warning {
+  color: #fbbf24;
+}
+
+.ldash-pos-detail-wallet {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ldash-pos-detail-wallet:hover {
+  color: var(--accent);
+}
+
 /* ============================================
    Version Indicator
    ============================================ */
