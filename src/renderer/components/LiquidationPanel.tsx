@@ -13,9 +13,9 @@ interface Position {
   unrealizedPnl: number
 }
 
-const DEFAULT_COINS = ['BTC', 'ETH', 'SOL']
+const DEFAULT_COINS: string[] = []  // empty = show ALL coins
 const DEFAULT_REFRESH = 30
-const DEFAULT_MAX_DIST = 5
+const DEFAULT_MAX_DIST = 15  // wider net to catch more positions
 
 function formatUsd(v: number): string {
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
@@ -70,9 +70,10 @@ export function LiquidationPanel(): React.ReactElement {
       if (showLoading) setLoading(true)
       try {
         const result = await window.electronAPI?.liquidationFetch({
-          coins: watchedCoins,
+          coins: watchedCoins.length > 0 ? watchedCoins : undefined,
           maxDistancePct,
         })
+        console.log('[LiqPanel] fetch result:', result)
         if (!mountedRef.current) return
         if (result?.success && result.positions) {
           setPositions(result.positions)
@@ -82,6 +83,7 @@ export function LiquidationPanel(): React.ReactElement {
           setError(result?.error ?? 'Failed to fetch')
         }
       } catch (e) {
+        console.error('[LiqPanel] fetch error:', e)
         if (mountedRef.current) setError(String(e))
       } finally {
         if (mountedRef.current) setLoading(false)
@@ -163,7 +165,7 @@ export function LiquidationPanel(): React.ReactElement {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSaveCoins()
                 }}
-                placeholder="BTC, ETH, SOL"
+                placeholder="Leave empty for all coins, or: BTC, ETH, SOL"
               />
               <button className="liq-settings-save" onClick={handleSaveCoins}>
                 Apply

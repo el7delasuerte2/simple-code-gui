@@ -8,11 +8,15 @@ import https from 'https'
 
 const HL_API_URL = 'https://api.hyperliquid.xyz/info'
 
-// Well-known active Hyperliquid whale wallets (public addresses)
+// Well-known active Hyperliquid whale wallets (public, tracked on CoinGlass/Lookonchain)
 const DEFAULT_WHALE_WALLETS = [
-  '0x8f3bfb7d34adec90577daab8ce18fc08e7cfb742',
-  '0xdbc33e6357144ba4d300c4a61b91b7b096f5a63d',
-  '0x5e4e8f23a0f5a5b5c7b4d79fb1e1a3e2e3e4e5f6',
+  '0x5078c2fbea2b2ad61bc840bc023e35fce56bedb6', // James Wynn - massive BTC longs
+  '0x20c2d95a3dfdca9e9ad12794d5fa6fad99da44f5', // @qwatio "50x Brother" - ETH shorts
+  '0x9018960618eff55f5852e345b7cb5661fd2928e1', // @qwatio newer wallet
+  '0x2ea18c23f72a4b6172c55b411823cdc5335923f4', // $282M ETH long whale (Arkham)
+  '0x7b7b908c076b9784487180de92e7161c2982734e', // $7M BTC/XRP shorts whale
+  '0x6c8512516ce5669d35113a11ca8b8de322fd84f6', // ETH Super Bull - 40k ETH long
+  '0xb317d2bc2d3d2df5fa441b5bae0ab9d8b07283ae', // CoinGlass tracked whale
 ]
 
 interface RawPosition {
@@ -103,9 +107,11 @@ export async function computeNearLiquidations(
 ): Promise<NearLiqPosition[]> {
   // Fetch current mid prices
   const mids = await fetchAllMids()
+  console.log(`[LiqFetcher] Got ${Object.keys(mids).length} mid prices`)
 
   // Use provided wallets or defaults
   const walletsToCheck = wallets.length > 0 ? wallets : DEFAULT_WHALE_WALLETS
+  console.log(`[LiqFetcher] Checking ${walletsToCheck.length} wallets`)
 
   const positions: NearLiqPosition[] = []
 

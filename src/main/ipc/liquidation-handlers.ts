@@ -13,11 +13,13 @@ export function registerLiquidationHandlers() {
       }
     ) => {
       try {
-        const wallets = settings.wallets ?? []
-        const coins = settings.coins ?? []
-        const maxDist = settings.maxDistancePct ?? 10
+        const wallets = settings?.wallets ?? []
+        const coins = settings?.coins ?? []
+        const maxDist = settings?.maxDistancePct ?? 15
 
+        console.log(`[Liquidation] Fetching: ${wallets.length || 'default'} wallets, coins=${coins.length ? coins.join(',') : 'ALL'}, maxDist=${maxDist}%`)
         const positions = await computeNearLiquidations(wallets, maxDist, coins)
+        console.log(`[Liquidation] Found ${positions.length} positions near liquidation`)
         return {
           success: true,
           positions,
