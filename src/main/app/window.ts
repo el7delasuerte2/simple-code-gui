@@ -36,12 +36,13 @@ export function createWindow(
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173')
+    mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'F12' && IS_DEBUG_MODE) mainWindow.webContents.toggleDevTools()
+    if (input.key === 'F12') mainWindow.webContents.toggleDevTools()
   })
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
